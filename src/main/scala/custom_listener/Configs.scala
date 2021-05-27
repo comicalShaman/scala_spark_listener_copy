@@ -34,7 +34,11 @@ object Configs {
 
 
   def writeFilePath(sparkConf: SparkConf): String = {
-    sparkConf.get("spark.delight_aug.writePath", "/dbfs/FileStore/delight_aug.txt")
+    sparkConf.get("spark.delight_aug.writePath", "/dbfs/FileStore/")
+  }
+
+  def appId(sparkConf: SparkConf): String = {
+    sparkConf.get("spark.app.id", "notDefined")
   }
 
 }

@@ -23,6 +23,7 @@ class metrics_logger_aug(sparkConf: SparkConf) extends Logging  {
   private val maxPollingInterval = Configs.maxPollingInterval(sparkConf)
   private val payloadMaxSize = Configs.payloadMaxSize(sparkConf)
   private val writeFilePath = Configs.writeFilePath(sparkConf)
+  private val appId = Configs.appId(sparkConf)
   private var currentPollingInterval = pollingInterval
 
   implicit val formats: DefaultFormats.type = org.json4s.DefaultFormats
@@ -102,13 +103,19 @@ class metrics_logger_aug(sparkConf: SparkConf) extends Logging  {
         val firstEvents = pendingEvents.synchronized(pendingEvents.take(payloadMaxSize)).to[immutable.Seq]
         val serializedEvents = firstEvents.flatMap(serializeEvent)
         val data = serializedEvents.mkString("","\n","\n")
+        val write_directory = writeFilePath.concat(appId + "/") //.concat(currentTime.toString).concat("delight_aug.txt")
+        var write_file = currentTime.toString.concat("_delight_aug.txt")
 
-        if (Files.exists(Paths.get(writeFilePath)))  {
-          Files.write(Paths.get(writeFilePath), data.getBytes(StandardCharsets.UTF_8),StandardOpenOption.APPEND)
-        }
-        else {
-          Files.write(Paths.get(writeFilePath), data.getBytes(StandardCharsets.UTF_8))
-        }
+        Files.createDirectories(Paths.get(write_directory))
+        Files.write(Paths.get(write_directory.concat(write_file)), data.getBytes(StandardCharsets.UTF_8))
+
+//      data bricks does not allow direct appends to files thus appending to same file appoach is cancelled
+//        if (Files.exists(Paths.get(writeFilePath)))  {
+//          Files.write(Paths.get(writeFilePath), data.getBytes(StandardCharsets.UTF_8),StandardOpenOption.APPEND)
+//        }
+//        else {
+//          Files.write(Paths.get(writeFilePath), data.getBytes(StandardCharsets.UTF_8))
+//        }
 
         pendingEvents.synchronized( // if everything went well, actually remove the payload from the queue
           for(_ <- 1 to firstEvents.length) pendingEvents.dequeue()
