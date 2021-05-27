@@ -1,3 +1,5 @@
+name := "spark-measure"
+
 crossScalaVersions := Seq("2.11.12", "2.12.12")
 
 name := "test_listener"
